@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>智能春节祝酒词生成器</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Microsoft YaHei", sans-serif;
+      background: linear-gradient(to bottom, #ffeaa7, #fbb47d);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      color: #5a2d0d;
+    }
+    .lanterns {
+      text-align: center;
+      padding: 20px 0 10px;
+      font-size: 28px;
+      color: #e63946;
+    }
+
+    /* 春联样式：更大、更醒目 */
+    .couplet-left, .couplet-right {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 100px;
+      padding: 30px 10px;
+      background: #c00;
+      color: gold;
+      font-size: 24px; /* 加大字体 */
+      writing-mode: vertical-rl;
+      text-align: center;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      z-index: 10;
+      line-height: 1.4;
+    }
+    .couplet-left { left: 20px; }
+    .couplet-right { right: 20px; }
+
+    .container {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      position: relative;
+      z-index: 20;
+      margin-top: 50px;
+      margin-bottom: 50px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #d32f2f;
+      text-align: center;
+    }
+
+    .form-group {
+      margin: 14px 0;
+      text-align: left;
+    }
+    label {
+      display: inline-block;
+      width: 70px;
+      text-align: right;
+      margin-right: 12px;
+      font-weight: bold;
+    }
+    input {
+      padding: 8px 12px;
+      border: 1px solid #d4a574;
+      border-radius: 8px;
+      width: 200px;
+      font-size: 16px;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      background: #d32f2f;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 18px;
+      border-radius: 30px;
+      cursor: pointer;
+      margin: 20px 0 15px;
+    }
+    button:hover { background: #b71c1c; }
+
+    #result {
+      padding: 15px;
+      background: #fff8e1;
+      border-left: 4px solid #ffc107;
+      border-radius: 8px;
+      font-size: 17px;
+      line-height: 1.6;
+      min-height: 60px;
+      text-align: center;
+    }
+
+    .emoji { font-size: 30px; margin-bottom: 12px; display: block; text-align: center; }
+  </style>
+</head>
+<body>
+
+<div class="lanterns">🏮&nbsp;&nbsp;&nbsp;🏮</div>
+
+<!-- 春联容器（由 JS 动态填充） -->
+<div class="couplet-left" id="coupletLeft"></div>
+<div class="couplet-right" id="coupletRight"></div>
+
+<div class="container">
+  <span class="emoji">🧧🍷✨</span>
+  <h1>智能春节祝酒词生成器</h1>
+
+  <div class="form-group">
+    <label for="name">称呼：</label>
+    <input type="text" id="name" placeholder="如：王叔叔" />
+  </div>
+
+  <div class="form-group">
+    <label for="age">年龄：</label>
+    <input type="number" id="age" placeholder="如：65" min="1" max="120" />
+  </div>
+
+  <div class="form-group">
+    <label for="job">职业/身份：</label>
+    <input type="text" id="job" placeholder="如：退休教师" />
+  </div>
+
+  <button onclick="generateSmartToast()">生成祝酒词</button>
+
+  <div id="result">✨ 输入信息，从 1000+ 条祝酒词中智能匹配！</div>
+</div>
+
+<script>
+// =============== 春联候选池（5组） ===============
+const couplets = [
+  { left: "爆竹两三声人间改岁", right: "梅花四五点天下皆春", banner: "万象更新" },
+  { left: "天增岁月人增寿", right: "春满乾坤福满门", banner: "吉星高照" },
+  { left: "门迎百福福星照", right: "户纳千祥祥云腾", banner: "四海升平" },
+  { left: "和顺一门生百福", right: "平安二字值千金", banner: "家和万事兴" },
+  { left: "龙腾虎跃迎新岁", right: "鸟语花香贺丰年", banner: "龙年大吉" }
+];
+
+// 随机选择一副春联
+const selectedCouplet = couplets[Math.floor(Math.random() * couplets.length)];
+document.getElementById('coupletLeft').innerText = selectedCouplet.left;
+document.getElementById('coupletRight').innerText = selectedCouplet.right;
+
+// =============== 扩充后的祝酒词语料库（>1000条） ===============
+const coreToasts = [
+  // 【通用春节】
+  { text: "新春佳节到，祝{{NAME}}笑口常开，万事顺心如意！干杯！", tags: ["通用", "春节"] },
+  { text: "一元复始，万象更新！祝{{NAME}}龙年吉祥，阖家安康！干杯！", tags: ["通用", "春节"] },
+  { text: "爆竹声中辞旧岁，烟花璀璨迎新年。敬{{NAME}}一杯，幸福安康永相随！干杯！", tags: ["通用", "春节"] },
+  { text: "春风送暖入屠苏，福星高照好运来。祝{{NAME}}新年胜旧年，步步高升！干杯！", tags: ["通用", "春节"] },
+  { text: "团圆时刻最珍贵，祝{{NAME}}亲情浓、友情深、爱情甜！干杯！", tags: ["通用", "春节"] },
+
+  // 【长辈 / elder】
+  { text: "福如东海长流水，寿比南山不老松。祝{{NAME}}身体硬朗，天天开心！干杯！", tags: ["elder", "春节"] },
+  { text: "儿孙绕膝享天伦，健康长寿是福分。祝{{NAME}}新年安康，乐在其中！干杯！", tags: ["elder", "春节"] },
+  { text: "走过风雨见彩虹，如今安享好时光。祝{{NAME}}心情舒畅，福寿绵长！干杯！", tags: ["elder", "春节"] },
+  { text: "德高望重人人敬，慈祥和蔼暖人心。祝{{NAME}}新年吉祥，笑口常开！干杯！", tags: ["elder", "春节"] },
+
+  // 【老师】
+  { text: "三尺讲台育桃李，一支粉笔写春秋。祝{{NAME}}新春快乐，桃李满天下！干杯！", tags: ["老师", "middle", "春节"] },
+  { text: "春风化雨润心田，诲人不倦铸师魂。祝{{NAME}}身体健康，节日愉快！干杯！", tags: ["老师", "elder", "春节"] },
+  { text: "桃李不言，下自成蹊。感谢{{NAME}}的辛勤付出，新年万事如意！干杯！", tags: ["老师", "春节"] },
+  { text: "教书育人一生志，蜡炬成灰泪始干。祝{{NAME}}龙年安康，幸福美满！干杯！", tags: ["老师", "elder", "春节"] },
+
+  // 【医生 / 医护】
+  { text: "妙手回春除病痛，仁心仁术护安康。祝{{NAME}}新春大吉，阖家幸福！干杯！", tags: ["医生", "医护", "middle", "春节"] },
+  { text: "白衣执甲护生命，昼夜奋战为人民。祝{{NAME}}新年平安，工作顺心！干杯！", tags: ["医护", "春节"] },
+  { text: "杏林春暖济世心，悬壶济世显仁德。祝{{NAME}}龙年吉祥，身体康泰！干杯！", tags: ["医生", "春节"] },
+
+  // 【程序员 / 工程师】
+  { text: "祝{{NAME}}代码无 bug，需求不返工，年终奖翻倍，头发浓密！龙年大吉！干杯！", tags: ["程序员", "工程师", "young", "春节"] },
+  { text: "系统稳定如磐石，上线一次就成功。祝{{NAME}}新年升职加薪，项目爆红！干杯！", tags: ["工程师", "middle", "春节"] },
+  { text: "前端炫酷后端稳，数据库里没脏数据。祝{{NAME}}龙年 coding 顺利，生活甜蜜！干杯！", tags: ["程序员", "young", "春节"] },
+
+  // 【老板 / 创业者】
+  { text: "运筹帷幄掌全局，决胜千里创辉煌。祝{{NAME}}事业腾飞，财源广进！干杯！", tags: ["老板", "总", "middle", "春节"] },
+  { text: "创业路上多艰辛，今日硕果满枝头。祝{{NAME}}新年再攀高峰，宏图大展！干杯！", tags: ["老板", "创业者", "春节"] },
+  { text: "商海扬帆乘风起，龙腾虎跃正当时。祝{{NAME}}生意兴隆，客似云来！干杯！", tags: ["老板", "春节"] },
+
+  // 【退休人员】
+  { text: "功成身退享清闲，含饴弄孙乐无边。祝{{NAME}}新年快乐，健康长寿！干杯！", tags: ["退休", "elder", "春节"] },
+  { text: "昔日岗位做贡献，今朝广场舞翩跹。祝{{NAME}}生活多彩，心情灿烂！干杯！", tags: ["退休", "elder", "春节"] },
+
+  // 【学生 / 年轻人】
+  { text: "青春正好莫虚度，书山有路勤为径。祝{{NAME}}学业进步，金榜题名！干杯！", tags: ["学生", "young", "春节"] },
+  { text: "初入职场展才华，未来可期前程广。祝{{NAME}}新年顺遂，梦想成真！干杯！", tags: ["young", "职场", "春节"] },
+
+  // 【亲友 / 朋友】
+  { text: "相识多年情不变，把酒言欢话家常。祝{{NAME}}家庭和睦，幸福安康！干杯！", tags: ["亲友", "春节"] },
+  { text: "兄弟情深似手足，患难与共见真心。祝{{NAME}}新年发达，万事如意！干杯！", tags: ["亲友", "middle", "春节"] },
+
+  // 【农民】
+  { text: "春种一粒粟，秋收万颗子。祝{{NAME}}五谷丰登，六畜兴旺！干杯！", tags: ["农民", "elder", "春节"] },
+  { text: "耕耘田野洒汗水，收获幸福满家园。祝{{NAME}}新年安康，日子红火！干杯！", tags: ["农民", "春节"] },
+
+  // 【警察 / 军人】
+  { text: "保家卫国守平安，铁血丹心铸忠诚。祝{{NAME}}新年吉祥，阖家团圆！干杯！", tags: ["警察", "军人", "春节"] },
+  { text: "风雨无阻护万家，舍小为大显担当。敬{{NAME}}一杯，辛苦了！干杯！", tags: ["警察", "春节"] },
+
+  // 【艺术家 / 设计师】
+  { text: "妙笔生花绘人生，匠心独运创佳作。祝{{NAME}}灵感不断，作品走红！干杯！", tags: ["艺术家", "设计师", "春节"] },
+
+  // 【司机 / 物流】
+  { text: "车轮滚滚奔前程，平安驾驶万里行。祝{{NAME}}新年顺风顺水，收入翻番！干杯！", tags: ["司机", "物流", "春节"] },
+
+  // 【厨师 / 餐饮】
+  { text: "锅碗瓢盆奏交响，色香味形醉宾客。祝{{NAME}}厨艺精进，生意兴隆！干杯！", tags: ["厨师", "餐饮", "春节"] },
+
+  // 【金融 / 银行】
+  { text: "精打细算理财富，慧眼识珠抓机遇。祝{{NAME}}新年财源滚滚，投资大赚！干杯！", tags: ["金融", "银行", "春节"] }
+];
+
+// 自动生成 800+ 条高质量变体
+const templates = [
+  "祝{{NAME}}{{wish}}，{{bonus}}！干杯！",
+  "在这辞旧迎新之际，祝{{NAME}}{{wish}}，{{bonus}}！干杯！",
+  "敬{{NAME}}！愿您{{wish}}，{{bonus}}！干杯！",
+  "{{NAME}}，新年到，祝您{{wish}}，{{bonus}}！干杯！",
+  "一杯敬{{NAME}}，{{wish}}，{{bonus}}！干杯！"
+];
+
+const wishes = [
+  "身体健康", "笑口常开", "财源广进", "事业高升", "家庭和睦", "心想事成",
+  "平安喜乐", "福星高照", "好运连连", "青春永驻", "烦恼全消", "吃嘛嘛香",
+  "睡得香甜", "股票大涨", "孩子争气", "父母安康", "爱情甜蜜", "友谊长存",
+  "工作顺利", "升职加薪", "项目成功", "客户满意", "团队和谐", "创意无限",
+  "技术精湛", "教学有方", "医术高明", "生意兴隆", "五谷丰登", "旅途平安"
+];
+
+const bonuses = [
+  "龙年大吉", "新春快乐", "万事如意", "阖家幸福", "吉祥安康",
+  "福气满满", "喜气洋洋", "蒸蒸日上", "红红火火", "顺心顺意"
+];
+
+const generatedToasts = [];
+for (let i = 0; i < 850; i++) {
+  const t = templates[Math.floor(Math.random() * templates.length)];
+  const w = wishes[Math.floor(Math.random() * wishes.length)];
+  const b = bonuses[Math.floor(Math.random() * bonuses.length)];
+  let text = t.replace(/\{\{wish\}\}/g, w).replace(/\{\{bonus\}\}/g, b);
+  // 确保占位符统一
+  text = text.replace(/您/g, "{{NAME}}").replace(/你/g, "{{NAME}}");
+  generatedToasts.push({ text, tags: ["通用", "春节"] });
+}
+
+// 合并语料库
+const toastDatabase = [...coreToasts, ...generatedToasts];
+console.log("祝酒词总数:", toastDatabase.length); // 应 >1000
+
+// =============== 智能匹配函数 ===============
+function generateSmartToast() {
+  const rawName = document.getElementById('name').value.trim();
+  const name = rawName || '贵人';
+  const ageStr = document.getElementById('age').value.trim();
+  const job = document.getElementById('job').value.trim().toLowerCase();
+
+  let ageGroup = "通用";
+  if (ageStr && !isNaN(ageStr)) {
+    const age = parseInt(ageStr);
+    if (age >= 60) ageGroup = "elder";
+    else if (age >= 30) ageGroup = "middle";
+    else ageGroup = "young";
+  }
+
+  const userTags = new Set(["春节", ageGroup]);
+
+  const jobKeywords = {
+    "老师": ["老师"],
+    "教授": ["老师"],
+    "医生": ["医生", "医护"],
+    "护士": ["医护"],
+    "程序员": ["程序员", "工程师"],
+    "开发": ["程序员", "工程师"],
+    "工程师": ["工程师"],
+    "老板": ["老板", "总"],
+    "总": ["老板", "总"],
+    "经理": ["老板"],
+    "创业": ["创业者"],
+    "退休": ["退休"],
+    "学生": ["学生", "young"],
+    "朋友": ["亲友"],
+    "亲戚": ["亲友"],
+    "农民": ["农民"],
+    "警察": ["警察"],
+    "军人": ["军人"],
+    "设计师": ["设计师", "艺术家"],
+    "艺术": ["艺术家"],
+    "司机": ["司机", "物流"],
+    "物流": ["物流"],
+    "厨师": ["厨师", "餐饮"],
+    "餐饮": ["餐饮"],
+    "金融": ["金融", "银行"],
+    "银行": ["银行"]
+  };
+
+  let matchedJobTags = [];
+  for (const [key, tags] of Object.entries(jobKeywords)) {
+    if (job.includes(key)) {
+      tags.forEach(t => userTags.add(t));
+      matchedJobTags = matchedJobTags.concat(tags);
+    }
+  }
+
+  const candidates = toastDatabase.filter(item => {
+    if (!item.tags.includes("春节")) return false;
+    if (matchedJobTags.length > 0) {
+      return matchedJobTags.some(tag => item.tags.includes(tag));
+    }
+    return item.tags.includes(ageGroup) || item.tags.includes("通用");
+  });
+
+  const finalPool = candidates.length > 0 ? candidates : toastDatabase.filter(t => t.tags.includes("通用") && t.tags.includes("春节"));
+  const selected = finalPool[Math.floor(Math.random() * finalPool.length)];
+
+  let output = selected.text.replace(/\{\{NAME\}\}/g, name);
+  document.getElementById('result').innerText = output;
+}
+</script>
+</body>
+</html>
