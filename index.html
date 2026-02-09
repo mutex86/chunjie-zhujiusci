@@ -100,9 +100,10 @@
       border-left: 4px solid #ffc107;
       border-radius: 8px;
       font-size: 17px;
-      line-height: 1.6;
+      line-height: 1.8;
       min-height: 60px;
-      text-align: center;
+      text-align: left;
+      white-space: pre-line;
     }
 
     .emoji { font-size: 30px; margin-bottom: 12px; display: block; text-align: center; }
@@ -327,6 +328,8 @@ function generateSmartToast() {
   const selected = finalPool[Math.floor(Math.random() * finalPool.length)];
 
   let output = selected.text.replace(/\{\{NAME\}\}/g, name);
+  // 在句号、感叹号、问号后添加换行符，保证每句话独立一行
+  output = output.replace(/([。！？!?])/g, '$1\n');
   document.getElementById('result').innerText = output;
 }
 </script>
